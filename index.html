@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simulador de Financiamento</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f2f2f2;
+            margin: 0;
+            padding: 0;
+        }
+
+        .container {
+            max-width: 600px;
+            margin: 50px auto;
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        h1 {
+            text-align: center;
+            color: #333;
+        }
+
+        label {
+            display: block;
+            margin: 15px 0 5px;
+            font-weight: bold;
+        }
+
+        input[type="number"],
+        select {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 15px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+
+        input[type="radio"] {
+            margin-right: 5px;
+        }
+
+        .btn {
+            width: 100%;
+            background-color: #4CAF50;
+            color: white;
+            padding: 10px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+
+        .btn:hover {
+            background-color: #45a049;
+        }
+
+        .result {
+            background-color: #e7f3e7;
+            padding: 15px;
+            margin-top: 20px;
+            border: 1px solid #4CAF50;
+            border-radius: 4px;
+        }
+
+        .result p {
+            margin: 5px 0;
+        }
+
+        .error {
+            color: red;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h1>Simulador de Financiamento</h1>
+        
+        <label for="valorSolicitado">Valor Solicitado (R$):</label>
+        <input type="number" id="valorSolicitado" placeholder="Ex: 12000" min="1000" required>
+
+        <label for="parcelas">Número de Parcelas:</label>
+        <input type="number" id="parcelas" placeholder="Ex: 12" min="1" required>
+
+        <label>Carência:</label>
+        <label><input type="radio" name="carencia" value="30" checked> 30 dias</label>
+        <label><input type="radio" name="carencia" value="45"> 45 dias</label>
+
+        <button class="btn" onclick="calcular()">Calcular</button>
+
+        <div id="resultado" class="result" style="display: none;">
+            <h3>Resultado do Simulador</h3>
+            <p id="valorParcela"></p>
+            <p id="dataPrimeiraParcela"></p>
+            <p id="valorTotalFinanciamento"></p>
+        </div>
+        <p id="error-message" class="error" style="display: none;"></p>
+    </div>
+
+    <script>
+        function calcular() {
+            const valorSolicitadoInput = document.getElementById("valorSolicitado");
+            const parcelasInput = document.getElementById("parcelas");
+            const errorMessage = document.getElementById("error-message");
+
+            const valorSolicitado = parseFloat(valorSolicitadoInput.value);
+            const numParcelas = parseInt(parcelasInput.value);
+            const carencia = parseInt(document.querySelector('input[name="carencia"]:checked').value);
+
+            if (isNaN(valorSolicitado) || isNaN(numParcelas) || valorSolicitado <= 0 || numParcelas <= 0) {
+                errorMessage.textContent = "Por favor, insira valores válidos para o valor solicitado e o número de parcelas.";
+                errorMessage.style.display = "block";
+                return;
+            } else {
+                errorMessage.style.display = "none";
+            }
+
+            const TAC = 360.00;
+            const taxaMensalBase = 0.0379; // 3.79% para 30 dias
+            const taxaDiaria = 0.001240750461; // taxa diária
+
+            // Ajuste da taxa de acordo com a carência
+            let taxaMensal = taxaMensalBase;
+            if (carencia === 45) {
+                taxaMensal += (45 - 30) * taxaDiaria;
+            }
+
+            const valorFinanciado = valorSolicitado + TAC;
+
+            // Cálculo da parcela (PMT)
+            const pmt = (valorFinanciado * taxaMensal) / (1 - Math.pow(1 + taxaMensal, -numParcelas));
+
+            // Cálculo do valor total do financiamento
+            const valorTotalFinanciamento = pmt * numParcelas;
+
+            // Cálculo da data da primeira parcela
+            const hoje = new Date();
+            const dataPrimeiraParcela = new Date(hoje);
+            dataPrimeiraParcela.setDate(hoje.getDate() + carencia);
+
+            // Formatação da data
+            const opcoesData = { day: '2-digit', month: '2-digit', year: 'numeric' };
+            const dataFormatada = dataPrimeiraParcela.toLocaleDateString('pt-BR', opcoesData);
+
+            // Exibição dos resultados
+            document.getElementById("valorParcela").innerHTML = `Valor da Parcela: R$ ${pmt.toFixed(2)}`;
+            document.getElementById("dataPrimeiraParcela").innerHTML = `Data da Primeira Parcela: ${dataFormatada}`;
+            document.getElementById("valorTotalFinanciamento").innerHTML = `Valor Total do Financiamento: R$ ${valorTotalFinanciamento.toFixed(2)}`;
+
+            document.getElementById("resultado").style.display = "block";
+        }
+    </script>
+
+</body>
+</html>
